@@ -1,4 +1,3 @@
-
 from flask import Flask, jsonify
 import requests
 import re
@@ -6,15 +5,21 @@ import json
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import random
 import os
 
 app = Flask(__name__)
 
+# Lista de User Agents
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)..."
-] * 10  # encurtado para espaço
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1"
+] * 10
 
 request_counter = 0
 current_user_agent_index = 0
@@ -30,7 +35,7 @@ def update_user_agent():
         current_user_agent_index = (current_user_agent_index + 1) % len(USER_AGENTS)
 
 def extract_username_from_url(profile_url):
-    pattern = r"https?://www\\.instagram\\.com/([^/]+)/?"
+    pattern = r"https?://www\.instagram\.com/([^/]+)/?"
     match = re.match(pattern, profile_url)
     if match:
         return match.group(1)
@@ -43,7 +48,9 @@ def get_instagram_profile_selenium(profile_url):
         options.add_argument('--disable-gpu')
         options.add_argument('--no-sandbox')
         options.add_argument(f"user-agent={get_user_agent()}")
-        driver = webdriver.Chrome(options=options)
+        options.add_argument('--disable-dev-shm-usage')
+
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
         driver.get(profile_url)
         time.sleep(3)
