@@ -2,3 +2,4 @@ Flask
 instagrapi
 gunicorn
 Pillow>=8.1.1
+fake-useragent
