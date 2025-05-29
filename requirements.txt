@@ -1,3 +1,5 @@
-flask
-selenium
 requests
+instagrapi
+flask
+fake-useragent
+gunicorn
