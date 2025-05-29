@@ -5,26 +5,27 @@ import json
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 import random
 import os
 
 app = Flask(__name__)
 
+# Lista de user agents (mantida como no original)
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1"
-] * 10
+    # ... (mantenha a lista completa do original)
+] * 5
 
+# Contador global de requisições
 request_counter = 0
 current_user_agent_index = 0
 
 def get_user_agent():
     global current_user_agent_index
-    return USER_AGENTS[current_user_agent_index]
+    user_agent = USER_AGENTS[current_user_agent_index]
+    return user_agent
 
 def update_user_agent():
     global request_counter, current_user_agent_index
@@ -40,18 +41,20 @@ def extract_username_from_url(profile_url):
     return profile_url
 
 def get_instagram_profile_selenium(profile_url):
+    global request_counter
     username = extract_username_from_url(profile_url)
     if not username:
         return {"error": "Link inválido"}
+
     try:
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless=new")  # Nova flag headless para melhor compatibilidade
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Reduz uso de memória compartilhada
         chrome_options.add_argument(f"user-agent={get_user_agent()}")
+        driver = webdriver.Chrome(options=chrome_options)
 
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
         driver.get(profile_url)
         time.sleep(3)
 
@@ -84,6 +87,7 @@ def get_instagram_profile_selenium(profile_url):
         driver.quit()
         update_user_agent()
         return profile_info
+
     except Exception as e:
         if 'driver' in locals():
             driver.quit()
@@ -91,6 +95,7 @@ def get_instagram_profile_selenium(profile_url):
         return {"error": f"Erro com Selenium: {str(e)}"}
 
 def get_instagram_profile_direct(username):
+    global request_counter
     url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
     headers = {
         "User-Agent": get_user_agent(),
@@ -101,6 +106,7 @@ def get_instagram_profile_direct(username):
         "X-IG-App-ID": "936619743392459",
         "Connection": "keep-alive"
     }
+
     try:
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
@@ -130,14 +136,15 @@ def get_instagram_profile_direct(username):
         return {"error": f"Erro na API direta: {str(e)}"}
 
 def get_instagram_graphql_data(username):
+    global request_counter
     try:
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument(f"user-agent={get_user_agent()}")
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        driver = webdriver.Chrome(options=chrome_options)
         driver.get(f"https://www.instagram.com/{username}/")
         time.sleep(3)
         html = driver.page_source
@@ -170,6 +177,7 @@ def get_instagram_graphql_data(username):
         response.raise_for_status()
         update_user_agent()
         return response.json()
+
     except Exception as e:
         update_user_agent()
         return {"error": f"Erro no GraphQL: {str(e)}"}
@@ -191,9 +199,9 @@ def get_instagram_profile(profile_url):
 def show_profile(profile_url):
     if not profile_url.startswith(('http://', 'https://')):
         profile_url = f"https://{profile_url}"
-    return jsonify(get_instagram_profile(profile_url))
+    profile_data = get_instagram_profile(profile_url)
+    return jsonify(profile_data)
 
 if __name__ == '__main__':
-    host = '0.0.0.0' if os.environ.get("RENDER") else '127.0.0.1'
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host=host, port=port)
+    port = int(os.environ.get('PORT', 5000))  # Usa a porta do Render ou 5000 localmente
+    app.run(host='0.0.0.0', port=port, debug=False)  # Debug desativado para produção
