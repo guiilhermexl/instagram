@@ -1,3 +1,1 @@
-flask==2.3.3
-requests==2.31.0
-selenium==4.17.2
+requests instagrapi flask fake-useragent gunicorn
