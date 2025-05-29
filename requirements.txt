@@ -1,6 +1,3 @@
-requests
+Flask
 instagrapi
-flask
-fake-useragent
 gunicorn
-Pillow>=8.1.1
