@@ -731,7 +731,7 @@
         <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
         <a href="{{ url_for('admin_orders') }}"><i class="fas fa-shopping-cart"></i> Pedidos</a>
         <a href="{{ url_for('admin_groups') }}"><i class="fas fa-users"></i> Grupos <span class="badge badge-primary">{{ logged_accounts }}</span></a>
-        <a href="{{ url_for('admin_send') }}"><i class="fas fa-paper-plane"></i> Enviar Comentários</a>
+        <a href="{{ url_for('admin_send') }}"><i class="fas fa-paper-plane"></i> Novos Pedidos</a>
         <a href="{{ url_for('admin_settings') }}"><i class="fas fa-cog"></i> Configurações</a>
         <a href="{{ url_for('admin_logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a>
     </div>
@@ -745,7 +745,7 @@
             <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if page == 'dashboard' else '' }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <a href="{{ url_for('admin_orders') }}" class="{{ 'active' if page == 'orders' else '' }}"><i class="fas fa-shopping-cart"></i> Pedidos</a>
             <a href="{{ url_for('admin_groups') }}" class="{{ 'active' if page == 'groups' else '' }}"><i class="fas fa-users"></i> Grupos <span class="badge">{{ logged_accounts }}</span></a>
-            <a href="{{ url_for('admin_send') }}" class="{{ 'active' if page == 'send' else '' }}"><i class="fas fa-paper-plane"></i> Enviar Comentários</a>
+            <a href="{{ url_for('admin_send') }}" class="{{ 'active' if page == 'send' else '' }}"><i class="fas fa-paper-plane"></i> Novos Pedidos</a>
             <a href="{{ url_for('admin_settings') }}" class="{{ 'active' if page == 'settings' else '' }}"><i class="fas fa-cog"></i> Configurações</a>
             <a href="{{ url_for('admin_logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a>
         </div>
@@ -1079,39 +1079,89 @@
             </div>
 
         {% elif page == 'send' %}
-            <div class="header">
-                <h1>Enviar Comentários</h1>
-                <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
-            </div>
-            
-            <div class="card">
-                <h2>Enviar Comentários em Publicação</h2>
-                <form method="POST">
-                    <div class="form-group">
-                        <label for="post_url">URL da Publicação</label>
-                        <input type="text" id="post_url" name="post_url" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantity">Quantidade</label>
-                        <input type="number" id="quantity" name="quantity" class="form-control" value="1" min="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="service_id">Tipo de Comentário</label>
-                        <select id="service_id" name="service_id" class="form-control" onchange="toggleCustomComment()">
-                            {% for id, service in services.items() %}
-                                <option value="{{ id }}">{{ service }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group" id="custom_comment_field" style="display: none;">
-                        <label for="custom_comment">Comentário Personalizado</label>
-                        <input type="text" id="custom_comment" name="custom_comment" class="form-control">
-                    </div>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Enviar</button>
-                </form>
-            </div>
+<div class="header">
+    <h1>Novos Pedidos</h1>
+    <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
+</div>
 
-        {% elif page == 'settings' %}
+<div class="card">
+    <h2>Novos Pedidos em Publicação</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="post_url">URL da Publicação</label>
+            <input type="text" name="post_url" id="post_url" class="form-control" placeholder="https://www.instagram.com/p/xyz/" required>
+        </div>
+
+        <div class="form-group">
+            <label for="quantity">Quantidade</label>
+            <input type="number" name="quantity" id="quantity" class="form-control" value="1" min="1" required>
+        </div>
+
+        <div class="form-group">
+            <label for="category">Categoria</label>
+            <select id="category" class="form-control" onchange="updateServices()" required>
+                <option value="">Selecione...</option>
+                <option value="Comentários">Comentários</option>
+                <option value="Curtidas">Curtidas</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="service_id">Serviço</label>
+            <select name="service_id" id="service_id" class="form-control" required></select>
+        </div>
+
+        <div class="form-group" id="custom_comment_group" style="display:none;">
+            <label for="custom_comment">Comentário Personalizado</label>
+            <textarea name="custom_comment" id="custom_comment" class="form-control" placeholder="Digite um comentário por linha" rows="4"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Enviar</button>
+    </form>
+</div>
+
+<script>
+    const allServices = {
+        "Comentários": {
+            "1": "Instagram Comentários Positivos (Emojis)",
+            "2": "Instagram Comentários Negativos (Emojis)",
+            "3": "Instagram Comentários Personalizados",
+            "4": "Instagram Comentários Positivos (Texto)",
+            "5": "Instagram Comentários Negativos (Texto)",
+            "6": "Instagram Comentários Positivos (Emojis + Texto)",
+            "7": "Instagram Comentários Negativos (Emojis + Texto)",
+            "8": "Instagram Comentários Aleatórios (Emojis)",
+            "9": "Instagram Comentários Aleatórios (Texto)"
+        },
+        "Curtidas": {
+            "10": "Instagram Curtidas Brasileiras"
+        }
+    };
+
+    function updateServices() {
+        const category = document.getElementById("category").value;
+        const serviceSelect = document.getElementById("service_id");
+        const customCommentGroup = document.getElementById("custom_comment_group");
+        serviceSelect.innerHTML = "";
+
+        if (!allServices[category]) return;
+
+        for (const [id, name] of Object.entries(allServices[category])) {
+            const opt = document.createElement("option");
+            opt.value = id;
+            opt.textContent = name;
+            serviceSelect.appendChild(opt);
+        }
+
+        serviceSelect.onchange = function() {
+            if (this.value === "3") {
+                customCommentGroup.style.display = "block";
+            } else {
+                customCommentGroup.style.display = "none";
+            }
+        };
+    }
+</script>{% elif page == 'settings' %}
             <div class="header">
                 <h1>Configurações</h1>
                 <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
