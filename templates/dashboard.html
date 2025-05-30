@@ -34,11 +34,13 @@
             background-color: #f1f5f9;
             color: var(--dark);
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
         .container {
             display: flex;
             min-height: 100vh;
+            position: relative;
         }
 
         /* Sidebar Modernizada */
@@ -48,7 +50,7 @@
             color: var(--dark);
             padding: 20px 0;
             position: fixed;
-            height: 100%;
+            height: 100vh;
             overflow-y: auto;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: var(--transition);
@@ -85,6 +87,9 @@
             border-radius: 8px;
             margin: 5px 0;
             transition: var(--transition);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .sidebar a:hover, .sidebar a.active {
@@ -97,6 +102,7 @@
             text-align: center;
             margin-right: 12px;
             font-size: 1.1rem;
+            flex-shrink: 0;
         }
 
         .sidebar .badge {
@@ -107,6 +113,7 @@
             padding: 3px 8px;
             border-radius: 20px;
             font-weight: 600;
+            flex-shrink: 0;
         }
 
         /* Main Content */
@@ -115,6 +122,7 @@
             padding: 20px;
             width: calc(100% - var(--sidebar-width));
             transition: var(--transition);
+            min-height: 100vh;
         }
 
         /* Header */
@@ -127,6 +135,8 @@
             padding: 15px 25px;
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .header h1 {
@@ -145,10 +155,11 @@
         .card {
             background-color: white;
             border-radius: 12px;
-            padding: 25px;
+            padding: 20px;
             margin-bottom: 25px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             border: 1px solid #e2e8f0;
+            overflow: hidden;
         }
 
         .card h2 {
@@ -159,6 +170,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .card h2 .btn {
@@ -170,7 +183,7 @@
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 25px;
         }
 
@@ -181,6 +194,7 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-height: 120px;
         }
 
         .stat-card::before {
@@ -224,18 +238,21 @@
         /* Tables */
         .table-responsive {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
+            min-width: 600px;
         }
 
         table th, table td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
         }
 
         table th {
@@ -257,6 +274,7 @@
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .status-concluido { background-color: #dcfce7; color: #166534; }
@@ -311,6 +329,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap;
         }
 
         .btn i {
@@ -401,16 +420,17 @@
             max-width: 450px;
             margin: 50px auto;
             background-color: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             text-align: center;
+            width: 95%;
         }
 
         .login-box h2 {
             margin-bottom: 25px;
             color: var(--dark);
-            font-size: 1.75rem;
+            font-size: 1.5rem;
         }
 
         .login-logo {
@@ -437,6 +457,7 @@
             padding: 10px;
             border-radius: 6px;
             border-left: 3px solid var(--primary);
+            display: none;
         }
 
         .proxy-info p {
@@ -454,6 +475,7 @@
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .badge-primary {
@@ -485,6 +507,8 @@
             width: 100%;
             z-index: 1000;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            top: 0;
+            left: 0;
         }
 
         .mobile-menu .hamburger {
@@ -498,6 +522,7 @@
             background-color: white;
             position: fixed;
             top: 60px;
+            left: 0;
             width: 100%;
             z-index: 1000;
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
@@ -530,6 +555,35 @@
             margin-left: auto;
         }
 
+        /* Flex utilities */
+        .d-flex {
+            display: flex;
+        }
+        
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
+        
+        .align-items-center {
+            align-items: center;
+        }
+        
+        .justify-content-between {
+            justify-content: space-between;
+        }
+        
+        .gap-2 {
+            gap: 0.5rem;
+        }
+        
+        .gap-3 {
+            gap: 1rem;
+        }
+        
+        .flex-grow-1 {
+            flex-grow: 1;
+        }
+
         /* Responsividade */
         @media (max-width: 992px) {
             .sidebar {
@@ -549,6 +603,7 @@
             .main-content {
                 margin-left: 0;
                 width: 100%;
+                padding-top: 70px;
             }
 
             .mobile-menu {
@@ -565,11 +620,15 @@
             .stats {
                 grid-template-columns: 1fr;
             }
+            
+            .header {
+                margin-top: 15px;
+            }
         }
 
         @media (max-width: 768px) {
             .card {
-                padding: 20px;
+                padding: 15px;
             }
 
             .header {
@@ -585,6 +644,42 @@
             table th, table td {
                 padding: 10px;
                 font-size: 0.85rem;
+            }
+            
+            .login-box {
+                padding: 20px;
+            }
+            
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .form-control {
+                padding: 10px 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stat-card {
+                padding: 15px;
+                min-height: 100px;
+            }
+            
+            .stat-card p {
+                font-size: 1.5rem;
+            }
+            
+            .card h2 {
+                font-size: 1.1rem;
+            }
+            
+            .login-box h2 {
+                font-size: 1.3rem;
+            }
+            
+            .login-logo {
+                font-size: 2rem;
             }
         }
 
@@ -610,10 +705,18 @@
         .mb-4 { margin-bottom: 1.5rem; }
         .mt-3 { margin-top: 1rem; }
         .mt-4 { margin-top: 1.5rem; }
-
-        .d-flex { display: flex; }
-        .align-items-center { align-items: center; }
-        .justify-content-between { justify-content: space-between; }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -15px;
+        }
+        
+        .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding: 0 15px;
+        }
     </style>
 </head>
 <body>
@@ -751,8 +854,8 @@
             
             <div class="card">
                 <h2>Lista de Pedidos</h2>
-                <form method="GET" class="d-flex align-items-center gap-3">
-                    <div class="form-group flex-grow-1">
+                <form method="GET" class="d-flex align-items-center flex-wrap gap-3">
+                    <div class="form-group flex-grow-1" style="min-width: 200px;">
                         <input type="text" id="search" name="search" class="form-control" value="{{ search_query }}" placeholder="Pesquisar por ID, Link ou Status">
                     </div>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Pesquisar</button>
@@ -846,15 +949,17 @@
                                     <td><span class="badge badge-primary">{{ group.accounts_count }}</span></td>
                                     <td>{{ group.proxy|truncate(15) if group.proxy else 'Nenhum' }}</td>
                                     <td><span class="badge badge-secondary">{{ group.proxy_type | capitalize if group.proxy_type else 'Nenhum' }}</span></td>
-                                    <td class="d-flex gap-2">
-                                        <a href="{{ url_for('admin_group_details', group_name=group.name) }}" class="btn btn-secondary btn-sm"><i class="fas fa-info-circle"></i></a>
-                                        <a href="{{ url_for('edit_group', group_name=group.name) }}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
-                                        <form method="POST" action="{{ url_for('delete_group') }}" style="display: inline;">
-                                            <input type="hidden" name="group_name" value="{{ group.name }}">
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja remover este grupo?')">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </form>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a href="{{ url_for('admin_group_details', group_name=group.name) }}" class="btn btn-secondary btn-sm"><i class="fas fa-info-circle"></i></a>
+                                            <a href="{{ url_for('edit_group', group_name=group.name) }}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
+                                            <form method="POST" action="{{ url_for('delete_group') }}" style="display: inline;">
+                                                <input type="hidden" name="group_name" value="{{ group.name }}">
+                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja remover este grupo?')">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -1093,7 +1198,7 @@
     <script>
         function toggleMenu() {
             const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('active');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
             
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('active');
@@ -1134,6 +1239,14 @@
                 if (item.getAttribute('href') === currentPath) {
                     item.classList.add('active');
                 }
+            });
+            
+            // Fechar menu mobile ao clicar em um item
+            const mobileMenuLinks = document.querySelectorAll('.mobile-menu-content a');
+            mobileMenuLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    document.getElementById('mobileMenu').style.display = 'none';
+                });
             });
         });
     </script>
