@@ -192,6 +192,9 @@ app = Flask(__name__)
 app.secret_key = '96b16ebae1c61067bb25fe62'
 
 # Funções auxiliares
+def generate_token():
+    return ''.join(random.choices('0123456789abcdef', k=22))
+
 def get_available_devices():
     with open(DEVICES_FILE, 'r') as f:
         return json.load(f)
@@ -742,7 +745,7 @@ def delete_group():
     
     return redirect(url_for('admin_groups'))
 
-@app.route('/admin/add_account_to_group/<group_name>', metode=['POST'])
+@app.route('/admin/add_account_to_group/<group_name>', methods=['POST'])
 def add_account_to_group(group_name):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
@@ -799,6 +802,7 @@ def api_v2():
     if not data:
         return jsonify({"status": "error", "error": "Nenhum dado fornecido"}), 400
     
+        
     action = data.get('action')
     
     if action == 'services':
@@ -886,6 +890,50 @@ def api_v2():
         username = "api_user"
         order_id = create_order(link, quantity, username, service_id, custom_comments if service_id == "3" else None, callback_url, subscription_params)
         return jsonify({"status": "success", "order": order_id})
+    
+    elif action == 'refill':
+        order_id = data.get('order')
+        order = get_order(order_id)
+        if order:
+            update_order(order_id, {"status": "in_progress", "remains": 0, "refill_id": generate_token()})
+            return jsonify({"status": "success", "refill": order["refill_id"]})
+        return jsonify({"status": "error", "error": "Pedido não encontrado"})
+    
+    elif action == 'multiRefill':
+        order_ids = data.get('orders', '').split(',')
+        results = []
+        for order_id in order_ids:
+            order = get_order(order_id)
+            if order:
+                update_order(order_id, {"status": "in_progress", "remains": 0, "refill_id": generate_token()})
+                results.append({"order": order_id, "refill": order["refill_id"], "status": "success"})
+            else:
+                results.append({"order": order_id, "status": "error", "error": "Pedido não encontrado"})
+        return jsonify(results)
+    
+    elif action == 'refill_status':
+        order_id = data.get('refill')
+        order = get_order(order_id)
+        if order and order.get("refill_id"):
+            return jsonify({"status": "success", "refill": order["refill_id"], "order_status": order["status"]})
+        return jsonify({"status": "error", "error": "Recarga ou pedido não encontrado"})
+    
+    elif action == 'multiRefill_status':
+        refill_ids = data.get('refills', '').split(',')
+        results = {}
+        for refill_id in refill_ids:
+            found = False
+            for file in os.listdir(ORDERS_FOLDER):
+                if file.startswith("order_") and file.endswith(".json"):
+                    with open(os.path.join(ORDERS_FOLDER, file), 'r') as f:
+                        order = json.load(f)
+                        if order.get("refill_id") == refill_id:
+                            results[refill_id] = {"status": "success", "order_status": order["status"]}
+                            found = True
+                            break
+            if not found:
+                results[refill_id] = {"status": "error", "error": "Recarga não encontrada"}
+        return jsonify(results)
     
     elif action == 'cancel':
         order_ids = data.get('orders', '').split(',')
