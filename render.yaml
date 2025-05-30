@@ -1,0 +1,25 @@
+# Arquivo render.yaml
+# Define o blueprint para o serviço Render
+
+services:
+  - type: web
+    name: instagrapi-app # Nome do seu serviço no Render
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    # Porta que sua aplicação irá expor
+    port: 5000 # Deve corresponder à porta que seu Flask está escutando (agora dinâmica via os.getenv("PORT", 5000))
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.15 # ou a versão do Python que você está usando (e.g., 3.10.x, 3.11.x)
+      - key: FLASK_SECRET_KEY
+        generateValue: true # Gera uma chave secreta automaticamente para a sessão do Flask
+      - key: PROXY # Opcional: Para configurar proxy se necessário
+        value: # Deixe este valor em branco ou remova a linha se não usar proxy
+    # Health check para verificar se a aplicação está online
+    healthCheckPath: /
+    # Discos para persistência de dados (opcional, requer plano pago no Render)
+    # disk:
+    #   name: data
+    #   mountPath: /var/data
+    #   sizeGB: 1
