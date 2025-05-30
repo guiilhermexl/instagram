@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f43f5e;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --gray-dark: #64748b;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Modernizada */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: white;
+            color: var(--dark);
+            padding: 20px 0;
+            position: fixed;
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            z-index: 1000;
+        }
+
+        .sidebar .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding: 0 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            margin-right: 10px;
+            font-size: 1.8rem;
+        }
+
+        .sidebar-menu {
+            padding: 0 10px;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            color: var(--gray-dark);
+            text-decoration: none;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 8px;
+            margin: 5px 0;
+            transition: var(--transition);
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #eef2ff;
+            color: var(--primary);
+        }
+
+        .sidebar a i {
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        .sidebar .badge {
+            margin-left: auto;
+            background-color: var(--primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            width: calc(100% - var(--sidebar-width));
+            transition: var(--transition);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .header .date {
+            font-size: 0.9rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        /* Cards */
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 20px;
+            color: var(--dark);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card h2 .btn {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+        }
+
+        /* Stats Cards */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-card.blue { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+        .stat-card.green { background: linear-gradient(135deg, var(--success), #0d9488); }
+        .stat-card.orange { background: linear-gradient(135deg, var(--warning), #f97316); }
+        .stat-card.red { background: linear-gradient(135deg, var(--secondary), #e11d48); }
+        .stat-card.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+        .stat-card h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .stat-card p {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+        .stat-card i {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            opacity: 0.3;
+        }
+
+        /* Tables */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table th, table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: var(--gray-dark);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-concluido { background-color: #dcfce7; color: #166534; }
+        .status-pendente { background-color: #fef3c7; color: #92400e; }
+        .status-em-progresso { background-color: #dbeafe; color: #1e40af; }
+        .status-cancelado { background-color: #fee2e2; color: #991b1b; }
+        .status-parcial { background-color: #ede9fe; color: #5b21b6; }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            background-color: #f8fafc;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background-color: white;
+        }
+
+        .form-control::placeholder {
+            color: var(--gray);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 0.85rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #e11d48;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--gray-dark);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--gray);
+            color: var(--dark);
+        }
+
+        .btn-outline:hover {
+            background-color: #f8fafc;
+            border-color: var(--gray-dark);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .alert i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        /* Login Box */
+        .login-box {
+            max-width: 450px;
+            margin: 50px auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .login-box h2 {
+            margin-bottom: 25px;
+            color: var(--dark);
+            font-size: 1.75rem;
+        }
+
+        .login-logo {
+            margin-bottom: 30px;
+            color: var(--primary);
+            font-size: 2.5rem;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 30px;
+        }
+
+        /* Proxy Info */
+        .proxy-info {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: var(--gray-dark);
+            background-color: #f8fafc;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .proxy-info p {
+            margin-bottom: 5px;
+        }
+
+        .proxy-info strong {
+            color: var(--dark);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-primary {
+            background-color: #e0e7ff;
+            color: var(--primary);
+        }
+
+        .badge-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            display: none;
+            background-color: white;
+            padding: 15px;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-menu .hamburger {
+            font-size: 1.5rem;
+            color: var(--dark);
+            cursor: pointer;
+        }
+
+        .mobile-menu-content {
+            display: none;
+            background-color: white;
+            position: fixed;
+            top: 60px;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+            max-height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+
+        .mobile-menu-content a {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            color: var(--gray-dark);
+            text-decoration: none;
+            border-bottom: 1px solid #f1f5f9;
+            font-weight: 500;
+        }
+
+        .mobile-menu-content a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .mobile-menu-content a:hover {
+            background-color: #f8fafc;
+            color: var(--primary);
+        }
+
+        .mobile-menu-content .badge {
+            margin-left: auto;
+        }
+
+        /* Responsividade */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 1100;
+                background-color: white;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .mobile-menu {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .mobile-menu .logo {
+                font-size: 1.2rem;
+                color: var(--primary);
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 20px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px;
+            }
+
+            .header .date {
+                margin-top: 10px;
+            }
+
+            table th, table td {
+                padding: 10px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        /* Utility Classes */
+        .text-primary { color: var(--primary); }
+        .text-success { color: var(--success); }
+        .text-warning { color: var(--warning); }
+        .text-danger { color: var(--secondary); }
+        .text-info { color: var(--info); }
+        .text-gray { color: var(--gray); }
+
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .mt-4 { margin-top: 1.5rem; }
+
+        .d-flex { display: flex; }
+        .align-items-center { align-items: center; }
+        .justify-content-between { justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <!-- Menu Mobile -->
+    <div class="mobile-menu">
+        <div class="logo">
+            <i class="fas fa-robot"></i> Instagram Bot
+        </div>
+        <span class="hamburger" onclick="toggleMenu()"><i class="fas fa-bars"></i></span>
+    </div>
+    <div class="mobile-menu-content" id="mobileMenu">
+        <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="{{ url_for('admin_orders') }}"><i class="fas fa-shopping-cart"></i> Pedidos</a>
+        <a href="{{ url_for('admin_groups') }}"><i class="fas fa-users"></i> Grupos <span class="badge badge-primary">{{ logged_accounts }}</span></a>
+        <a href="{{ url_for('admin_send') }}"><i class="fas fa-paper-plane"></i> Enviar Comentários</a>
+        <a href="{{ url_for('admin_settings') }}"><i class="fas fa-cog"></i> Configurações</a>
+        <a href="{{ url_for('admin_logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            <i class="fas fa-robot"></i> Instagram Bot
+        </div>
+        <div class="sidebar-menu">
+            <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if page == 'dashboard' else '' }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="{{ url_for('admin_orders') }}" class="{{ 'active' if page == 'orders' else '' }}"><i class="fas fa-shopping-cart"></i> Pedidos</a>
+            <a href="{{ url_for('admin_groups') }}" class="{{ 'active' if page == 'groups' else '' }}"><i class="fas fa-users"></i> Grupos <span class="badge">{{ logged_accounts }}</span></a>
+            <a href="{{ url_for('admin_send') }}" class="{{ 'active' if page == 'send' else '' }}"><i class="fas fa-paper-plane"></i> Enviar Comentários</a>
+            <a href="{{ url_for('admin_settings') }}" class="{{ 'active' if page == 'settings' else '' }}"><i class="fas fa-cog"></i> Configurações</a>
+            <a href="{{ url_for('admin_logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} fade-in">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i> {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if page == 'login' %}
+            <div class="login-box">
+                <div class="login-logo">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h2>Painel Administrativo</h2>
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="username">Usuário</label>
+                        <input type="text" id="username" name="username" class="form-control" value="admin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+                </form>
+            </div>
+
+        {% elif page == 'dashboard' %}
+            <div class="header">
+                <h1>Dashboard</h1>
+                <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card blue">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h3>Pedidos Totais</h3>
+                    <p>{{ stats.total }}</p>
+                </div>
+                <div class="stat-card green">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Concluídos</h3>
+                    <p>{{ stats.completed }}</p>
+                </div>
+                <div class="stat-card orange">
+                    <i class="fas fa-clock"></i>
+                    <h3>Pendentes</h3>
+                    <p>{{ stats.pending }}</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Estatísticas de Pedidos</h2>
+                <div class="d-flex align-items-center flex-wrap gap-3 mb-4">
+                    <div class="d-flex align-items-center"><div style="background-color: #10b981; width: 16px; height: 16px; border-radius: 4px; margin-right: 8px;"></div> Concluído</div>
+                    <div class="d-flex align-items-center"><div style="background-color: #f59e0b; width: 16px; height: 16px; border-radius: 4px; margin-right: 8px;"></div> Pendente</div>
+                    <div class="d-flex align-items-center"><div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 4px; margin-right: 8px;"></div> Em Progresso</div>
+                    <div class="d-flex align-items-center"><div style="background-color: #ef4444; width: 16px; height: 16px; border-radius: 4px; margin-right: 8px;"></div> Cancelado</div>
+                    <div class="d-flex align-items-center"><div style="background-color: #8b5cf6; width: 16px; height: 16px; border-radius: 4px; margin-right: 8px;"></div> Parciais</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>
+                    Pedidos Recentes 
+                    <a href="{{ url_for('admin_orders') }}" class="btn btn-outline btn-sm">
+                        <i class="fas fa-eye"></i> Ver todos
+                    </a>
+                </h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Link</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders[:5] %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td><a href="{{ order.link }}" target="_blank" class="text-primary">{{ order.link|truncate(30) }}</a></td>
+                                    <td><span class="status status-{{ order.status }}">{{ order.status | capitalize }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% elif page == 'orders' %}
+            <div class="header">
+                <h1>Pedidos</h1>
+                <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+            
+            <div class="card">
+                <h2>Lista de Pedidos</h2>
+                <form method="GET" class="d-flex align-items-center gap-3">
+                    <div class="form-group flex-grow-1">
+                        <input type="text" id="search" name="search" class="form-control" value="{{ search_query }}" placeholder="Pesquisar por ID, Link ou Status">
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Pesquisar</button>
+                </form>
+                
+                <div class="table-responsive mt-4">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Link</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td><a href="{{ order.link }}" target="_blank" class="text-primary">{{ order.link|truncate(25) }}</a></td>
+                                    <td><span class="status status-{{ order.status }}">{{ order.status | capitalize }}</span></td>
+                                    <td>{{ order.created_at }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% elif page == 'groups' %}
+            <div class="header">
+                <h1>Grupos</h1>
+                <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+            
+            <div class="card">
+                <h2>Adicionar Novo Grupo</h2>
+                <form method="POST" action="{{ url_for('add_group') }}">
+                    <div class="form-group">
+                        <label for="group_name">Nome do Grupo</label>
+                        <input type="text" id="group_name" name="group_name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="proxy_type">Tipo de Proxy</label>
+                        <select id="proxy_type" name="proxy_type" class="form-control" onchange="toggleProxyFields()">
+                            <option value="none">Sem Proxy</option>
+                            <option value="http">HTTP</option>
+                            <option value="socks5">SOCKS5</option>
+                            <option value="socks4">SOCKS4</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="proxy_field" style="display: none;">
+                        <label for="proxy">Endereço do Proxy</label>
+                        <input type="text" id="proxy" name="proxy" class="form-control" placeholder="Exemplo: http://usuario:senha@host:porta">
+                        <div class="proxy-info" id="proxy_info_http">
+                            <p><strong>Formato HTTP:</strong> http://usuario:senha@host:porta ou http://host:porta</p>
+                            <p>Exemplo: http://meuuser:minhasenha@192.168.1.1:8080</p>
+                        </div>
+                        <div class="proxy-info" id="proxy_info_socks5">
+                            <p><strong>Formato SOCKS5:</strong> socks5://usuario:senha@host:porta ou socks5://host:porta</p>
+                            <p>Exemplo: socks5://meuuser:minhasenha@192.168.1.1:1080</p>
+                        </div>
+                        <div class="proxy-info" id="proxy_info_socks4">
+                            <p><strong>Formato SOCKS4:</strong> socks4://host:porta (usuário e senha não são suportados)</p>
+                            <p>Exemplo: socks4://192.168.1.1:1080</p>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Adicionar Grupo</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>Grupos Existentes</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Dispositivo</th>
+                                <th>Contas</th>
+                                <th>Proxy</th>
+                                <th>Tipo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for group in groups %}
+                                <tr>
+                                    <td>{{ group.name }}</td>
+                                    <td>{{ group.device }}</td>
+                                    <td><span class="badge badge-primary">{{ group.accounts_count }}</span></td>
+                                    <td>{{ group.proxy|truncate(15) if group.proxy else 'Nenhum' }}</td>
+                                    <td><span class="badge badge-secondary">{{ group.proxy_type | capitalize if group.proxy_type else 'Nenhum' }}</span></td>
+                                    <td class="d-flex gap-2">
+                                        <a href="{{ url_for('admin_group_details', group_name=group.name) }}" class="btn btn-secondary btn-sm"><i class="fas fa-info-circle"></i></a>
+                                        <a href="{{ url_for('edit_group', group_name=group.name) }}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
+                                        <form method="POST" action="{{ url_for('delete_group') }}" style="display: inline;">
+                                            <input type="hidden" name="group_name" value="{{ group.name }}">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja remover este grupo?')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% elif page == 'group_details' %}
+            <div class="header">
+                <h1>Detalhes do Grupo: {{ group.name }}</h1>
+                <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+            
+            <div class="card">
+                <h2>Informações do Grupo</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong><i class="fas fa-tag text-gray mr-2"></i> Nome:</strong> {{ group.name }}</p>
+                        <p><strong><i class="fas fa-mobile-alt text-gray mr-2"></i> Dispositivo:</strong> {{ group.device_settings.get('name', 'Dispositivo Personalizado') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong><i class="fas fa-globe text-gray mr-2"></i> Proxy:</strong> {{ group.proxy or 'Nenhum' }}</p>
+                        <p><strong><i class="fas fa-network-wired text-gray mr-2"></i> Tipo de Proxy:</strong> {{ group.proxy_type | capitalize or 'Nenhum' }}</p>
+                        <p><strong><i class="fas fa-users text-gray mr-2"></i> Total de Contas:</strong> <span class="badge badge-primary">{{ group.accounts | length }}</span></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Adicionar Conta ao Grupo</h2>
+                <form method="POST" action="{{ url_for('add_account_to_group', group_name=group.name) }}">
+                    <div class="form-group">
+                        <label for="sessionid">Session ID</label>
+                        <input type="text" id="sessionid" name="sessionid" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ds_user_id">DS User ID</label>
+                        <input type="text" id="ds_user_id" name="ds_user_id" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus"></i> Adicionar Conta</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>Contas no Grupo</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Adicionado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in group.accounts %}
+                                <tr>
+                                    <td>{{ account.username }}</td>
+                                    <td>{{ account.added_at }}</td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('remove_account_from_group') }}">
+                                            <input type="hidden" name="group_name" value="{{ group.name }}">
+                                            <input type="hidden" name="username" value="{{ account.username }}">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja remover esta conta?')">
+                                                <i class="fas fa-user-minus"></i> Remover
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% elif page == 'edit_group' %}
+            <div class="header">
+                <h1>Editar Grupo: {{ group.name }}</h1>
+                <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+            
+            <div class="card">
+                <h2>Editar Informações do Grupo</h2>
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="group_name">Nome do Grupo</label>
+                        <input type="text" id="group_name" name="group_name" class="form-control" value="{{ group.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="proxy_type">Tipo de Proxy</label>
+                        <select id="proxy_type" name="proxy_type" class="form-control" onchange="toggleProxyFields()">
+                            <option value="none" {% if not group.proxy_type %}selected{% endif %}>Sem Proxy</option>
+                            <option value="http" {% if group.proxy_type == 'http' %}selected{% endif %}>HTTP</option>
+                            <option value="socks5" {% if group.proxy_type == 'socks5' %}selected{% endif %}>SOCKS5</option>
+                            <option value="socks4" {% if group.proxy_type == 'socks4' %}selected{% endif %}>SOCKS4</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="proxy_field" {% if not group.proxy %}style="display: none;"{% endif %}>
+                        <label for="proxy">Endereço do Proxy</label>
+                        <input type="text" id="proxy" name="proxy" class="form-control" value="{{ group.proxy or '' }}" placeholder="Exemplo: http://usuario:senha@host:porta">
+                        <div class="proxy-info" id="proxy_info_http">
+                            <p><strong>Formato HTTP:</strong> http://usuario:senha@host:porta ou http://host:porta</p>
+                            <p>Exemplo: http://meuuser:minhasenha@192.168.1.1:8080</p>
+                        </div>
+                        <div class="proxy-info" id="proxy_info_socks5">
+                            <p><strong>Formato SOCKS5:</strong> socks5://usuario:senha@host:porta ou socks5://host:porta</p>
+                            <p>Exemplo: socks5://meuuser:minhasenha@192.168.1.1:1080</p>
+                        </div>
+                        <div class="proxy-info" id="proxy_info_socks4">
+                            <p><strong>Formato SOCKS4:</strong> socks4://host:porta (usuário e senha não são suportados)</p>
+                            <p>Exemplo: socks4://192.168.1.1:1080</p>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Alterações</button>
+                </form>
+            </div>
+
+        {% elif page == 'send' %}
+            <div class="header">
+                <h1>Enviar Comentários</h1>
+                <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+            
+            <div class="card">
+                <h2>Enviar Comentários em Publicação</h2>
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="post_url">URL da Publicação</label>
+                        <input type="text" id="post_url" name="post_url" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Quantidade</label>
+                        <input type="number" id="quantity" name="quantity" class="form-control" value="1" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="service_id">Tipo de Comentário</label>
+                        <select id="service_id" name="service_id" class="form-control" onchange="toggleCustomComment()">
+                            {% for id, service in services.items() %}
+                                <option value="{{ id }}">{{ service }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" id="custom_comment_field" style="display: none;">
+                        <label for="custom_comment">Comentário Personalizado</label>
+                        <input type="text" id="custom_comment" name="custom_comment" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Enviar</button>
+                </form>
+            </div>
+
+        {% elif page == 'settings' %}
+            <div class="header">
+                <h1>Configurações</h1>
+                <div class="date"><i class="far fa-calendar-alt"></i> {{ datetime.now().strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+            
+            <div class="card">
+                <h2>Informações Gerais</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong><i class="fas fa-users text-gray mr-2"></i> Contas Logadas:</strong> <span class="badge badge-primary">{{ logged_accounts }}</span></p>
+                        <p><strong><i class="fas fa-shopping-cart text-gray mr-2"></i> Total de Pedidos:</strong> {{ total_orders }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong><i class="fas fa-key text-gray mr-2"></i> Chave API:</strong> <code>{{ API_KEY }}</code></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Comentários Positivos (Emojis)</h2>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for comment in positive_emoji_comments %}
+                        <span class="badge badge-success">{{ comment }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Comentários Negativos (Emojis)</h2>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for comment in negative_emoji_comments %}
+                        <span class="badge badge-danger">{{ comment }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Comentários Positivos (Texto)</h2>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for comment in positive_text_comments %}
+                        <span class="badge badge-success">{{ comment }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Comentários Negativos (Texto)</h2>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for comment in negative_text_comments %}
+                        <span class="badge badge-danger">{{ comment }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+        {% elif page == 'public_login' %}
+            <div class="login-box">
+                <div class="login-logo">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h2>Login Público</h2>
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="sessionid">Session ID</label>
+                        <input type="text" id="sessionid" name="sessionid" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ds_user_id">DS User ID</label>
+                        <input type="text" id="ds_user_id" name="ds_user_id" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="group_name">Nome do Grupo</label>
+                        <input type="text" id="group_name" name="group_name" class="form-control" value="{{ group_name or 'default' }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-plug"></i> Conectar</button>
+                </form>
+            </div>
+        {% endif %}
+
+        <div class="footer">
+            Instagram Bot Dashboard &copy; {{ datetime.now().strftime('%Y') }} - Todos os direitos reservados
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('active');
+            
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function toggleCustomComment() {
+            const serviceId = document.getElementById('service_id').value;
+            const customCommentField = document.getElementById('custom_comment_field');
+            customCommentField.style.display = serviceId === '3' ? 'block' : 'none';
+        }
+
+        function toggleProxyFields() {
+            const proxyType = document.getElementById('proxy_type').value;
+            const proxyField = document.getElementById('proxy_field');
+            const proxyInfoHttp = document.getElementById('proxy_info_http');
+            const proxyInfoSocks5 = document.getElementById('proxy_info_socks5');
+            const proxyInfoSocks4 = document.getElementById('proxy_info_socks4');
+
+            if (proxyType === 'none') {
+                proxyField.style.display = 'none';
+            } else {
+                proxyField.style.display = 'block';
+                proxyInfoHttp.style.display = proxyType === 'http' ? 'block' : 'none';
+                proxyInfoSocks5.style.display = proxyType === 'socks5' ? 'block' : 'none';
+                proxyInfoSocks4.style.display = proxyType === 'socks4' ? 'block' : 'none';
+            }
+        }
+
+        // Inicializar visibilidade dos campos de proxy ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleProxyFields();
+            
+            // Adicionar classe active ao item do menu correspondente à página atual
+            const currentPath = window.location.pathname;
+            const menuItems = document.querySelectorAll('.sidebar-menu a');
+            
+            menuItems.forEach(item => {
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
