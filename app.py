@@ -478,7 +478,7 @@ def admin_login():
         else:
             flash('Credenciais inválidas', 'error')
     
-    return render_template('index.html', page='login')
+    return render_template('login.html')
 
 @app.route('/admin/logout')
 def admin_logout():
@@ -497,7 +497,7 @@ def admin_dashboard():
     orders = list_orders(search_query)
     logged_accounts = get_total_accounts()
     
-    return render_template('index.html', page='dashboard', stats=stats, orders=orders, logged_accounts=logged_accounts, datetime=datetime)
+    return render_template('dashboard.html', page='dashboard', stats=stats, orders=orders, logged_accounts=logged_accounts, datetime=datetime)
 
 @app.route('/admin/orders')
 def admin_orders():
@@ -507,7 +507,7 @@ def admin_orders():
     search_query = request.args.get('search', '')
     orders = list_orders(search_query)
     
-    return render_template('index.html', page='orders', orders=orders, search_query=search_query, logged_accounts=get_total_accounts(), datetime=datetime)
+    return render_template('dashboard.html', page='orders', orders=orders, search_query=search_query, logged_accounts=get_total_accounts(), datetime=datetime)
 
 @app.route('/admin/groups')
 def admin_groups():
@@ -516,7 +516,7 @@ def admin_groups():
     
     groups = list_groups()
     
-    return render_template('index.html', page='groups', groups=groups, datetime=datetime)
+    return render_template('dashboard.html', page='groups', groups=groups, datetime=datetime)
 
 @app.route('/admin/group/<group_name>')
 def admin_group_details(group_name):
@@ -528,7 +528,7 @@ def admin_group_details(group_name):
         flash('Grupo não encontrado', 'error')
         return redirect(url_for('admin_groups'))
     
-    return render_template('index.html', page='group_details', group=group, total_groups=len(list_groups()), datetime=datetime)
+    return render_template('dashboard.html', page='group_details', group=group, total_groups=len(list_groups()), datetime=datetime)
 
 @app.route('/admin/edit_group/<group_name>', methods=['GET', 'POST'])
 def edit_group(group_name):
@@ -564,7 +564,7 @@ def edit_group(group_name):
                 flash('Falha ao atualizar grupo.', 'error')
         return redirect(url_for('admin_groups'))
     
-    return render_template('index.html', page='edit_group', group=group, datetime=datetime)
+    return render_template('dashboard.html', page='edit_group', group=group, datetime=datetime)
 
 @app.route('/admin/send', methods=['GET', 'POST'])
 def admin_send():
@@ -661,14 +661,14 @@ def admin_send():
             
             return redirect(url_for('admin_orders'))
     
-    return render_template('index.html', page='send', logged_accounts=logged_accounts, services=SERVICES, datetime=datetime)
+    return render_template('dashboard.html', page='send', logged_accounts=logged_accounts, services=SERVICES, datetime=datetime)
 
 @app.route('/admin/settings')
 def admin_settings():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     
-    return render_template('index.html', page='settings', logged_accounts=get_total_accounts(), 
+    return render_template('dashboard.html', page='settings', logged_accounts=get_total_accounts(), 
          total_orders=len([f for f in os.listdir(ORDERS_FOLDER) if f.startswith('order_') and f.endswith('.json')]), 
          API_KEY=API_KEY, positive_emoji_comments=POSITIVE_EMOJI_COMMENTS, negative_emoji_comments=NEGATIVE_EMOJI_COMMENTS, 
          positive_text_comments=POSITIVE_TEXT_COMMENTS, negative_text_comments=NEGATIVE_TEXT_COMMENTS, datetime=datetime)
@@ -932,9 +932,9 @@ def public_login():
             else:
                 flash(f'Falha no login: {result}', 'error')
         
-        return render_template('index.html', page='public_login', username=result if success else None, group_name=group_name or 'default')
+        return render_template('dashboard.html', page='public_login', username=result if success else None, group_name=group_name or 'default')
     
-    return render_template('index.html', page='public_login')
+    return render_template('dashboard.html', page='public_login')
 
 # Proteção contra acesso direto
 @app.route('/', defaults={'path': ''})
