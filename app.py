@@ -2,6 +2,7 @@ import os
 import json
 import time
 import random
+import requests  # NOVO: Para enviar notificações via webhook
 from datetime import datetime, timedelta
 from instagrapi import Client
 from flask import Flask, request, render_template, redirect, url_for, jsonify, session, flash
@@ -14,6 +15,8 @@ DEVICES_FILE = "devices.json"
 API_KEY = "96b16ebae1c61067bb25fe62"  # Chave de API de 22 dígitos
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"  # Em produção, use uma senha forte e hash
+CURRENCY = "BRL"  # NOVO: Moeda padrão para respostas da API
+DEFAULT_BALANCE = 1000.00  # NOVO: Saldo fictício para ação 'balance'
 
 # Listas de emojis e comentários
 POSITIVE_EMOJI_COMMENTS = ["👍", "❤️", "🔥", "👏", "😎", "🎉", "😍", "🙌", "🤩", "✨", "🌟", "💖", "🥳", "💯", "😊"]
@@ -201,6 +204,23 @@ def get_random_device():
     devices = get_available_devices()
     return random.choice(devices)
 
+def notify_callback(order_id, updates):  # NOVO: Função para notificar status via webhook
+    order = get_order(order_id)
+    if order and order.get('callback_url'):
+        try:
+            payload = {
+                'order': order_id,
+                'status': updates.get('status', order['status']),
+                'charge': order['charge'],
+                'start_count': order['start_count'],
+                'remains': order.get('remains', None),
+                'currency': CURRENCY
+            }
+            response = requests.post(order['callback_url'], json=payload, timeout=10)
+            print(f"Notificação enviada para {order['callback_url']}: {response.status_code}")
+        except Exception as e:
+            print(f"Erro ao enviar notificação para {order['callback_url']}: {str(e)}")
+
 def save_session_to_group(group_name, sessionid, ds_user_id, proxy=None, proxy_type=None):
     try:
         cl = Client()
@@ -291,7 +311,7 @@ def get_next_order_id():
     order_files = [f for f in os.listdir(ORDERS_FOLDER) if f.startswith("order_") and f.endswith(".json")]
     return max([int(f.split("_")[1].split(".")[0]) for f in order_files] + [0]) + 1
 
-def create_order(link, quantity, username, service_id, custom_comments=None):
+def create_order(link, quantity, username, service_id, custom_comments=None, callback_url=None):  # MODIFICADO: Adicionado callback_url
     order_id = get_next_order_id()
     order = {
         "id": order_id,
@@ -306,10 +326,13 @@ def create_order(link, quantity, username, service_id, custom_comments=None):
         "remains": None,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "mode": "Auto",
-        "custom_comments": custom_comments if custom_comments else None
+        "custom_comments": custom_comments if custom_comments else None,
+        "callback_url": callback_url,  # NOVO: Armazenar callback_url
+        "currency": CURRENCY  # NOVO: Adicionar moeda
     }
     with open(os.path.join(ORDERS_FOLDER, f"order_{order_id}.json"), 'w') as f:
         json.dump(order, f)
+    notify_callback(order_id, {"status": "pending"})  # NOVO: Notificar criação do pedido
     return order_id
 
 def get_order(order_id):
@@ -325,6 +348,7 @@ def update_order(order_id, updates):
         order.update(updates)
         with open(os.path.join(ORDERS_FOLDER, f"order_{order_id}.json"), 'w') as f:
             json.dump(order, f)
+        notify_callback(order_id, updates)  # NOVO: Notificar atualização de status
         return True
     return False
 
@@ -587,7 +611,7 @@ def admin_send():
             order_id = create_order(post_url, quantity, session.get('admin_username', 'admin'), service_id, custom_comment)
             comments_sent = 0
             error_logs = []
-            update_order(order_id, {"status": "in_progress"})
+            update_order(order_id, {"status": "in_progress"})  # MODIFICADO: Notificação será enviada via update_order
             
             groups = []
             for file in os.listdir(GROUPS_FOLDER):
@@ -650,13 +674,13 @@ def admin_send():
                         continue
             
             if comments_sent == 0:
-                update_order(order_id, {"status": "canceled", "reason": ", ".join(error_logs) or "Verifique a URL ou os logs."})
+                update_order(order_id, {"status": "canceled", "reason": ", ".join(error_logs) or "Verifique a URL ou os logs."})  # MODIFICADO: Notificação será enviada
                 flash(f"Falha ao enviar comentários: {', '.join(error_logs)}", 'error')
             elif comments_sent < quantity:
-                update_order(order_id, {"status": "partial", "remains": quantity - comments_sent})
+                update_order(order_id, {"status": "partial", "remains": quantity - comments_sent})  # MODIFICADO: Notificação será enviada
                 flash(f"Enviados {comments_sent}/{quantity} comentários. Erros: {', '.join(error_logs)}", 'warning')
             else:
-                update_order(order_id, {"status": "completed"})
+                update_order(order_id, {"status": "completed"})  # MODIFICADO: Notificação será enviada
                 flash(f"Sucesso! {comments_sent} comentários enviados.", 'success')
             
             return redirect(url_for('admin_orders'))
@@ -797,6 +821,94 @@ def api_v2():
             })
         return jsonify({"status": "error", "error": "Pedido não encontrado"})
     
+    elif action == 'status':  # NOVO: Consultar status de um pedido
+        order_id = data.get('order')
+        order = get_order(order_id)
+        if order:
+            return jsonify({
+                "status": order["status"],
+                "charge": order["charge"],
+                "start_count": order["start_count"],
+                "remains": order["remains"],
+                "currency": order["currency"]
+            })
+        return jsonify({"status": "error", "error": "Pedido não encontrado"})
+    
+    elif action == 'multiStatus':  # NOVO: Consultar status de múltiplos pedidos
+        order_ids = data.get('orders', '').split(',')
+        results = {}
+        for order_id in order_ids:
+            order = get_order(order_id)
+            if order:
+                results[order_id] = {
+                    "status": order["status"],
+                    "charge": order["charge"],
+                    "start_count": order["start_count"],
+                    "remains": order["remains"],
+                    "currency": order["currency"]
+                }
+            else:
+                results[order_id] = {"status": "error", "error": "Pedido não encontrado"}
+        return jsonify(results)
+    
+    elif action == 'refill':  # NOVO: Solicitar recarga de um pedido
+        order_id = data.get('order')
+        order = get_order(order_id)
+        if order:
+            # Simular recarga (atualizar status para 'in_progress' e zerar remains)
+            update_order(order_id, {"status": "in_progress", "remains": 0, "refill_id": generate_token()})
+            return jsonify({"status": "success", "refill": order["refill_id"]})
+        return jsonify({"status": "error", "error": "Pedido não encontrado"})
+    
+    elif action == 'multiRefill':  # NOVO: Solicitar recarga de múltiplos pedidos
+        order_ids = data.get('orders', '').split(',')
+        results = []
+        for order_id in order_ids:
+            order = get_order(order_id)
+            if order:
+                update_order(order_id, {"status": "in_progress", "remains": 0, "refill_id": generate_token()})
+                results.append({"order": order_id, "refill": order["refill_id"], "status": "success"})
+            else:
+                results.append({"order": order_id, "status": "error", "error": "Pedido não encontrado"})
+        return jsonify(results)
+    
+    elif action == 'refill_status':  # NOVO: Consultar status de uma recarga
+        order_id = data.get('refill')
+        order = get_order(order_id)
+        if order and order.get("refill_id"):
+            return jsonify({"status": "success", "refill": order["refill_id"], "order_status": order["status"]})
+        return jsonify({"status": "error", "error": "Recarga ou pedido não encontrado"})
+    
+    elif action == 'multiRefill_status':  # NOVO: Consultar status de múltiplas recargas
+        refill_ids = data.get('refills', '').split(',')
+        results = {}
+        for refill_id in refill_ids:
+            found = False
+            for file in os.listdir(ORDERS_FOLDER):
+                if file.startswith("order_") and file.endswith(".json"):
+                    with open(os.path.join(ORDERS_FOLDER, file), 'r') as f:
+                        order = json.load(f)
+                        if order.get("refill_id") == refill_id:
+                            results[refill_id] = {"status": "success", "order_status": order["status"]}
+                            found = True
+                            break
+            if not found:
+                results[refill_id] = {"status": "error", "error": "Recarga não encontrada"}
+        return jsonify(results)
+    
+    elif action == 'cancel':  # NOVO: Cancelar múltiplos pedidos
+        order_ids = data.get('orders', '').split(',')
+        results = []
+        for order_id in order_ids:
+            if update_order(order_id, {"status": "canceled", "reason": "Cancelado via API"}):
+                results.append({"order": order_id, "status": "success"})
+            else:
+                results.append({"order": order_id, "status": "error", "error": "Pedido não encontrado"})
+        return jsonify(results)
+    
+    elif action == 'balance':  # NOVO: Consultar saldo (fictício)
+        return jsonify({"status": "success", "balance": DEFAULT_BALANCE, "currency": CURRENCY})
+    
     elif action == 'setstartcount':
         order_id = data.get('id')
         start_count = data.get('start_count')
@@ -890,7 +1002,8 @@ def api_v2():
         service_id = data.get('service')
         link = data.get('link')
         quantity = data.get('quantity')
-        custom_comments = data.get('comments')  # Campo para comentários personalizados (usado no serviço 3)
+        custom_comments = data.get('comments')  # Campo para comentários personalizados
+        callback_url = data.get('callback_url')  # NOVO: Aceitar callback_url
 
         if not all([service_id, link, quantity]):
             return jsonify({"status": "error", "error": "Parâmetros obrigatórios ausentes (service, link, quantity)"}), 400
@@ -910,7 +1023,7 @@ def api_v2():
             return jsonify({"status": "error", "error": "Comentários personalizados são obrigatórios para este serviço"}), 400
 
         username = "api_user"  # Usuário padrão para pedidos via API
-        order_id = create_order(link, quantity, username, service_id, custom_comments if service_id == "3" else None)
+        order_id = create_order(link, quantity, username, service_id, custom_comments if service_id == "3" else None, callback_url)  # MODIFICADO: Passar callback_url
         return jsonify({"status": "success", "order": order_id})
     
     return jsonify({"status": "error", "error": "Ação inválida"})
