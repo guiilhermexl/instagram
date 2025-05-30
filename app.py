@@ -190,7 +190,7 @@ if not os.path.exists(DEVICES_FILE):
         json.dump(default_devices, f, indent=4)
 
 app = Flask(__name__)
-app.secret_key = 'sua_chave_secreta_super_segura_aqui'
+app.secret_key = '96b16ebae1c61067bb25fe62'
 
 # Funções auxiliares
 def generate_token():
