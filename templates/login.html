@@ -1,74 +1,187 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Login - Instagram Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Provedor WasSMM</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background-color: #f1f5f9;
-            font-family: 'Inter', sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .login-box {
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
             max-width: 450px;
-            margin: 100px auto;
             background-color: white;
-            padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 25px;
             text-align: center;
         }
+        
         .login-logo {
-            color: #6366f1;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
         }
+        
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .login-body {
+            padding: 25px;
+        }
+        
         .form-group {
             margin-bottom: 20px;
-            text-align: left;
         }
+        
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
+            color: #4a5568;
         }
+        
         .form-control {
             width: 100%;
-            padding: 12px 15px;
+            padding: 14px 15px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        
         .btn {
-            background-color: #6366f1;
+            width: 100%;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: white;
-            padding: 12px 20px;
+            padding: 14px;
             border: none;
             border-radius: 8px;
             font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
             margin-top: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
+        }
+        
+        .login-footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 0.85rem;
+            color: #718096;
+            border-top: 1px solid #edf2f7;
+        }
+        
+        .login-footer a {
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+                display: block;
+            }
+            
+            .login-container {
+                border-radius: 10px;
+                margin-top: 20px;
+            }
+            
+            .login-header {
+                padding: 20px;
+            }
+            
+            .login-logo {
+                font-size: 2rem;
+            }
+            
+            .login-title {
+                font-size: 1.3rem;
+            }
+            
+            .login-body {
+                padding: 20px;
+            }
+            
+            .form-control {
+                padding: 12px 15px;
+            }
+            
+            .btn {
+                padding: 12px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-box">
-        <div class="login-logo">
-            <i class="fas fa-robot"></i>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-logo">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h1 class="login-title">Provedor WasSMM</h1>
         </div>
-        <h2>Entrar no Painel</h2>
-        <form method="POST">
-            <div class="form-group">
-                <label for="username">Usuário</label>
-                <input type="text" id="username" name="username" class="form-control" value="admin" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Senha</label>
-                <input type="password" id="password" name="password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
-        </form>
+        
+        <div class="login-body">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Digite seu usuário" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Digite sua senha" required>
+                </div>
+                
+                <button type="submit" class="btn">
+                    <i class="fas fa-sign-in-alt"></i> Acessar Painel
+                </button>
+            </form>
+        </div>
+        
+        <div class="login-footer">
+            <p>© 2023 Provedor WasSMM. <a href="#">Esqueceu sua senha?</a></p>
+        </div>
     </div>
 </body>
 </html>
