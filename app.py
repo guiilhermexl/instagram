@@ -6,9 +6,6 @@ import requests
 from datetime import datetime, timedelta
 from instagrapi import Client
 from flask import Flask, request, render_template, redirect, url_for, jsonify, session, flash
-from threading import Thread
-from queue import Queue
-from collections import defaultdict
 
 # Configurações
 SESSION_FOLDER = "sessions"
@@ -22,18 +19,12 @@ DEFAULT_BALANCE = 1000.00
 
 # Listas de emojis e comentários
 POSITIVE_EMOJI_COMMENTS = ["👍", "❤️", "🔥", "👏", "😎", "🎉", "😍", "🙌", "🤩", "✨", "🌟", "💖", "🥳", "💯", "😊"]
-NEGATIVE_EMOJI_COMMENTS = ["😒", "👎", "😣", "🙄", "😞", "😕", "😢", "🤦", "😓", "😑", "💔"]
+NEGATIVE_EMOJI_COMMENTS = ["😒", "👎", "😣", "🙄", "😞", "😕", "😢", "🤬", "😓", "😑", "💔", "😠", "🤦", "😤", "😖"]
 POSITIVE_TEXT_COMMENTS = [
     "Ótimo conteúdo!", "Parabéns, adorei!", "Muito bom!", "Incrível!", "Top demais!", "Amei isso!", "Excelente trabalho!", "Você arrasou!", "Fantástico!"
 ]
 NEGATIVE_TEXT_COMMENTS = [
-    "Não gostei muito.", "Poderia melhorar.", "Esperava mais.", "Não curti.", "Deixou a desejar.", "Muito fraco.", "Nada interessante.", "Que decepção."
-]
-
-# Lista de palavras ofensivas para filtro
-OFFENSIVE_WORDS = [
-    "idiota", "estúpido", "imbecil", "bosta", "merda", "caralho", "puta", "vagabundo", "lixo", "porcaria",
-    "retardado", "burro", "noob", "fracassado", "desgraça", "maldito", "droga", "inútil", "patético", "ridículo"
+    "Não gostei muito.", "Poderia melhorar.", "Esperava mais.", "Não curti.", "Deixou a desejar.", "Muito fraco.", "Nada interessante.", "Que decepção.", "Péssimo."
 ]
 
 # Serviços disponíveis
@@ -46,8 +37,7 @@ SERVICES = {
     "6": "Instagram Comentários Positivos (Emojis + Texto) | Brazil ★ R35 | Max 6K | Start: 15m",
     "7": "Instagram Comentários Negativos (Emojis + Texto) | Brazil ★ R35 | Max 6K | Start: 15m",
     "8": "Instagram Comentários Aleatórios (Emojis) | Brazil ★ R25 | Max 6K | Start: 15m",
-    "9": "Instagram Comentários Aleatórios (Texto) | Brazil ★ R25 | Max 6K | Start: 15m",
-    "10": "Instagram Curtidas Brasileiras | Brazil ★ R20 | Min 10 | Max 500 | Start: 15m"
+    "9": "Instagram Comentários Aleatórios (Texto) | Brazil ★ R25 | Max 6K | Start: 15m"
 }
 
 # Criar pastas se não existirem
@@ -201,41 +191,6 @@ if not os.path.exists(DEVICES_FILE):
 app = Flask(__name__)
 app.secret_key = '96b16ebae1c61067bb25fe62'
 
-# Sistema de controle de rate limit
-ACCOUNT_ACTIVITY = defaultdict(list)  # {username: [(timestamp, action_type)]}
-ORDER_QUEUE = Queue()  # Fila para ordens pendentes
-MAX_ACTIONS_PER_DAY = 24  # Máximo de ações (comentários/curtidas) por conta por dia
-ACTION_COOLDOWN = 3600  # 1 hora em segundos
-
-# Função para verificar se o comentário é ofensivo
-def is_offensive(comment):
-    comment_lower = comment.lower()
-    for word in OFFENSIVE_WORDS:
-        if word in comment_lower:
-            return True
-    return False
-
-# Função para verificar se a conta pode realizar uma ação
-def can_account_perform_action(username, action_type):
-    now = datetime.now()
-    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    # Contar ações no último dia
-    actions = [t for t, a in ACCOUNT_ACTIVITY[username] if t >= day_start and a == action_type]
-    if len(actions) >= MAX_ACTIONS_PER_DAY:
-        return False
-    
-    # Verificar cooldown de 1 hora
-    recent_action = [t for t, a in ACCOUNT_ACTIVITY[username] if a == action_type and (now - t).total_seconds() < ACTION_COOLDOWN]
-    return not recent_action
-
-# Função para registrar uma ação
-def log_account_action(username, action_type):
-    ACCOUNT_ACTIVITY[username].append((datetime.now(), action_type))
-    # Limpar ações antigas (mais de 24 horas)
-    day_ago = datetime.now() - timedelta(days=1)
-    ACCOUNT_ACTIVITY[username] = [(t, a) for t, a in ACCOUNT_ACTIVITY[username] if t > day_ago]
-
 # Funções auxiliares
 def generate_token():
     return ''.join(random.choices('0123456789abcdef', k=22))
@@ -336,11 +291,6 @@ def save_session_to_group(group_name, sessionid, ds_user_id, proxy=None, proxy_t
 
 def comment_post(client, post_url, comment, service_id):
     try:
-        # Verificar se o comentário é ofensivo (apenas para comentários de texto)
-        if service_id in ['3', '4', '5', '6', '7', '9'] and is_offensive(comment):
-            print(f"Comentário bloqueado por conter conteúdo ofensivo: {comment}")
-            return False, "Comentário contém conteúdo ofensivo."
-        
         media_id = client.media_pk_from_url(post_url)
         if not media_id:
             print(f"Erro: Não foi possível obter o ID da mídia para {post_url}.")
@@ -353,20 +303,6 @@ def comment_post(client, post_url, comment, service_id):
         print(f"Erro ao comentar na publicação {post_url}: {error_message}")
         return False, error_message
 
-def like_post(client, post_url):
-    try:
-        media_id = client.media_pk_from_url(post_url)
-        if not media_id:
-            print(f"Erro: Não foi possível obter o ID da mídia para {post_url}.")
-            return False, "Não foi possível obter o ID da mídia."
-        client.media_like(media_id)
-        print(f"Curtida enviada para {post_url}")
-        return True, ""
-    except Exception as e:
-        error_message = f"{e.__class__.__name__}: {str(e)}"
-        print(f"Erro ao curtir a publicação {post_url}: {error_message}")
-        return False, error_message
-
 def get_next_order_id():
     order_files = [f for f in os.listdir(ORDERS_FOLDER) if f.startswith("order_") and f.endswith(".json")]
     return max([int(f.split("_")[1].split(".")[0]) for f in order_files] + [0]) + 1
@@ -376,7 +312,7 @@ def create_order(link, quantity, username, service_id, custom_comments=None, cal
     order = {
         "id": order_id,
         "user": username,
-        "charge": round(random.uniform(0.1, 0.3), 3) if service_id != "10" else round(random.uniform(0.05, 0.2), 3),
+        "charge": round(random.uniform(0.1, 0.3), 3),
         "link": link,
         "start_count": 0,
         "quantity": quantity,
@@ -394,7 +330,6 @@ def create_order(link, quantity, username, service_id, custom_comments=None, cal
     with open(os.path.join(ORDERS_FOLDER, f"order_{order_id}.json"), 'w') as f:
         json.dump(order, f)
     notify_callback(order_id, {"status": "pending"})
-    ORDER_QUEUE.put(order_id)  # Adicionar à fila de processamento
     return order_id
 
 def get_order(order_id):
@@ -552,109 +487,6 @@ def get_total_accounts():
                 total += len(group_data.get('accounts', []))
     return total
 
-# Função para processar ordens da fila
-def process_order_queue():
-    while True:
-        if not ORDER_QUEUE.empty():
-            order_id = ORDER_QUEUE.get()
-            order = get_order(order_id)
-            if not order or order['status'] != 'pending':
-                continue
-            
-            update_order(order_id, {"status": "in_progress"})
-            comments_or_likes_sent = 0
-            error_logs = []
-            quantity = order['quantity']
-            post_url = order['link']
-            service_id = order['service_id']
-            custom_comment = order['custom_comments']
-            
-            groups = []
-            for file in os.listdir(GROUPS_FOLDER):
-                if file.endswith('.json'):
-                    with open(os.path.join(GROUPS_FOLDER, file), 'r') as f:
-                        group_data = json.load(f)
-                        groups.append(group_data)
-            
-            for group in groups:
-                if comments_or_likes_sent >= quantity:
-                    break
-                for account in group.get('accounts', []):
-                    if comments_or_likes_sent >= quantity:
-                        break
-                    username = account['username']
-                    action_type = 'like' if service_id == '10' else 'comment'
-                    
-                    if not can_account_perform_action(username, action_type):
-                        print(f"Conta @{username} atingiu o limite de {action_type}s. Pulando...")
-                        continue
-                    
-                    try:
-                        cl = Client()
-                        if group.get('proxy'):
-                            cl.set_proxy(group['proxy'])
-                        cl.set_settings({
-                            "authorization_data": {
-                                "ds_user_id": account['ds_user_id'],
-                                "sessionid": account['sessionid']
-                            },
-                            "user_agent": group['device_settings'].get('user_agent', "Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; OnePlus; 6T Dev; devitron; qcom; en_US; 314665256)"),
-                            "device_settings": group['device_settings']
-                        })
-                        cl.account_info()
-                        
-                        if service_id == '1':
-                            comment = random.choice(POSITIVE_EMOJI_COMMENTS)
-                        elif service_id == '2':
-                            comment = random.choice(NEGATIVE_EMOJI_COMMENTS)
-                        elif service_id == '3':
-                            comment = custom_comment if custom_comment else random.choice(POSITIVE_TEXT_COMMENTS)
-                        elif service_id == '4':
-                            comment = random.choice(POSITIVE_TEXT_COMMENTS)
-                        elif service_id == '5':
-                            comment = random.choice(NEGATIVE_TEXT_COMMENTS)
-                        elif service_id == '6':
-                            comment = f"{random.choice(POSITIVE_TEXT_COMMENTS)} {random.choice(POSITIVE_EMOJI_COMMENTS)}"
-                        elif service_id == '7':
-                            comment = f"{random.choice(NEGATIVE_TEXT_COMMENTS)} {random.choice(NEGATIVE_EMOJI_COMMENTS)}"
-                        elif service_id == '8':
-                            comment = random.choice(POSITIVE_EMOJI_COMMENTS + NEGATIVE_EMOJI_COMMENTS)
-                        elif service_id == '9':
-                            comment = random.choice(POSITIVE_TEXT_COMMENTS + NEGATIVE_TEXT_COMMENTS)
-                        elif service_id == '10':
-                            comment = None  # Curtidas não usam comentários
-                        else:
-                            comment = random.choice(POSITIVE_EMOJI_COMMENTS)
-                        
-                        if service_id == '10':
-                            success, error_message = like_post(cl, post_url)
-                        else:
-                            success, error_message = comment_post(cl, post_url, comment, service_id)
-                        
-                        if success:
-                            comments_or_likes_sent += 1
-                            log_account_action(username, action_type)
-                        else:
-                            error_logs.append(f"Erro por @{username}: {error_message}")
-                        
-                        time.sleep(random.uniform(5, 10))
-                    except Exception as e:
-                        error_logs.append(f"Erro com @{username}: {str(e)}")
-                        continue
-            
-            if comments_or_likes_sent == 0:
-                update_order(order_id, {"status": "canceled", "reason": ", ".join(error_logs) or "Verifique a URL ou os logs."})
-            elif comments_or_likes_sent < quantity:
-                update_order(order_id, {"status": "partial", "remains": quantity - comments_or_likes_sent})
-                ORDER_QUEUE.put(order_id)  # Reenfileirar se não concluído
-            else:
-                update_order(order_id, {"status": "completed"})
-        
-        time.sleep(1)  # Evitar consumo excessivo de CPU
-
-# Iniciar thread de processamento da fila
-Thread(target=process_order_queue, daemon=True).start()
-
 # Rotas de Autenticação
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -767,11 +599,6 @@ def admin_send():
         quantity = int(request.form.get('quantity', 1))
         service_id = request.form.get('service_id', '1')
         custom_comment = request.form.get('custom_comment', '').strip() if service_id == '3' else None
-        
-        if service_id == '10' and (quantity < 10 or quantity > 500):
-            flash('Quantidade para curtidas deve estar entre 10 e 500.', 'error')
-            return redirect(url_for('admin_send'))
-        
         subscription_params = {
             'runs': request.form.get('runs', 1),
             'interval': request.form.get('interval', 0),
@@ -787,12 +614,83 @@ def admin_send():
         if not post_url:
             flash('URL do post é obrigatória', 'error')
         elif logged_accounts == 0:
-            flash('Nenhuma conta está logada para enviar comentários/curtidas.', 'error')
+            flash('Nenhuma conta está logada para enviar comentários.', 'error')
         else:
-            order_id = create_order(post_url, quantity, session.get('admin_username', 'admin'), service_id, custom_comment, None
-
-, subscription_params)
-            flash(f"Ordem {order_id} criada e adicionada à fila de processamento.", 'success')
+            order_id = create_order(post_url, quantity, session.get('admin_username', 'admin'), service_id, custom_comment, None, subscription_params)
+            comments_sent = 0
+            error_logs = []
+            update_order(order_id, {"status": "in_progress"})
+            
+            groups = []
+            for file in os.listdir(GROUPS_FOLDER):
+                if file.endswith('.json'):
+                    with open(os.path.join(GROUPS_FOLDER, file), 'r') as f:
+                        group_data = json.load(f)
+                        groups.append(group_data)
+            
+            for group in groups:
+                if comments_sent >= quantity:
+                    break
+                for account in group.get('accounts', []):
+                    if comments_sent >= quantity:
+                        break
+                    username = account['username']
+                    try:
+                        cl = Client()
+                        if group.get('proxy'):
+                            cl.set_proxy(group['proxy'])
+                        cl.set_settings({
+                            "authorization_data": {
+                                "ds_user_id": account['ds_user_id'],
+                                "sessionid": account['sessionid']
+                            },
+                            "user_agent": group['device_settings'].get('user_agent', "Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; OnePlus; 6T Dev; devitron; qcom; en_US; 314665256)"),
+                            "device_settings": group['device_settings']
+                        })
+                        cl.account_info()
+                        
+                        if service_id == '1':
+                            comment = random.choice(POSITIVE_EMOJI_COMMENTS)
+                        elif service_id == '2':
+                            comment = random.choice(NEGATIVE_EMOJI_COMMENTS)
+                        elif service_id == '3':
+                            comment = custom_comment if custom_comment else random.choice(POSITIVE_TEXT_COMMENTS)
+                        elif service_id == '4':
+                            comment = random.choice(POSITIVE_TEXT_COMMENTS)
+                        elif service_id == '5':
+                            comment = random.choice(NEGATIVE_TEXT_COMMENTS)
+                        elif service_id == '6':
+                            comment = f"{random.choice(POSITIVE_TEXT_COMMENTS)} {random.choice(POSITIVE_EMOJI_COMMENTS)}"
+                        elif service_id == '7':
+                            comment = f"{random.choice(NEGATIVE_TEXT_COMMENTS)} {random.choice(NEGATIVE_EMOJI_COMMENTS)}"
+                        elif service_id == '8':
+                            comment = random.choice(POSITIVE_EMOJI_COMMENTS + NEGATIVE_EMOJI_COMMENTS)
+                        elif service_id == '9':
+                            comment = random.choice(POSITIVE_TEXT_COMMENTS + NEGATIVE_TEXT_COMMENTS)
+                        else:
+                            comment = random.choice(POSITIVE_EMOJI_COMMENTS)
+                        
+                        success, error_message = comment_post(cl, post_url, comment, service_id)
+                        if success:
+                            comments_sent += 1
+                        else:
+                            error_logs.append(f"Erro por @{username}: {error_message}")
+                        
+                        time.sleep(random.uniform(5, 10))
+                    except Exception as e:
+                        error_logs.append(f"Erro com @{username}: {str(e)}")
+                        continue
+            
+            if comments_sent == 0:
+                update_order(order_id, {"status": "canceled", "reason": ", ".join(error_logs) or "Verifique a URL ou os logs."})
+                flash(f"Falha ao enviar comentários: {', '.join(error_logs)}", 'error')
+            elif comments_sent < quantity:
+                update_order(order_id, {"status": "partial", "remains": quantity - comments_sent})
+                flash(f"Enviados {comments_sent}/{quantity} comentários. Erros: {', '.join(error_logs)}", 'warning')
+            else:
+                update_order(order_id, {"status": "completed"})
+                flash(f"Sucesso! {comments_sent} comentários enviados.", 'success')
+            
             return redirect(url_for('admin_orders'))
     
     return render_template('dashboard.html', page='send', logged_accounts=logged_accounts, services=SERVICES, datetime=datetime)
@@ -904,6 +802,7 @@ def api_v2():
     if not data:
         return jsonify({"status": "error", "error": "Nenhum dado fornecido"}), 400
     
+        
     action = data.get('action')
     
     if action == 'services':
@@ -913,9 +812,9 @@ def api_v2():
                 "name": service_name,
                 "type": "Default",
                 "rate": service_name.split("★")[1].split("|")[0].strip() if "★" in service_name else "R30",
-                "min": 10 if service_id == "10" else 1,
-                "max": 500 if service_id == "10" else 6000,
-                "category": "Instagram Likes" if service_id == "10" else "Instagram Comments",
+                "min": 1,
+                "max": 6000,
+                "category": "Instagram Comments",
                 "custom_comments": service_id == "3",
                 "runs": 1,
                 "interval": 0
@@ -980,18 +879,13 @@ def api_v2():
         
         try:
             quantity = int(quantity)
-            if service_id == "10" and (quantity < 10 or quantity > 500):
-                return jsonify({"status": "error", "error": "Quantidade para curtidas deve estar entre 10 e 500"}), 400
-            elif service_id != "10" and (quantity < 1 or quantity > 6000):
+            if quantity < 1 or quantity > 6000:
                 return jsonify({"status": "error", "error": "Quantidade fora dos limites (1-6000)"}), 400
         except ValueError:
             return jsonify({"status": "error", "error": "Quantidade deve ser um número válido"}), 400
 
         if service_id == "3" and not custom_comments:
             return jsonify({"status": "error", "error": "Comentários personalizados são obrigatórios para este serviço"}), 400
-        
-        if service_id == "3" and is_offensive(custom_comments):
-            return jsonify({"status": "error", "error": "Comentário contém conteúdo ofensivo"}), 400
 
         username = "api_user"
         order_id = create_order(link, quantity, username, service_id, custom_comments if service_id == "3" else None, callback_url, subscription_params)
@@ -1002,7 +896,6 @@ def api_v2():
         order = get_order(order_id)
         if order:
             update_order(order_id, {"status": "in_progress", "remains": 0, "refill_id": generate_token()})
-            ORDER_QUEUE.put(order_id)
             return jsonify({"status": "success", "refill": order["refill_id"]})
         return jsonify({"status": "error", "error": "Pedido não encontrado"})
     
@@ -1013,7 +906,6 @@ def api_v2():
             order = get_order(order_id)
             if order:
                 update_order(order_id, {"status": "in_progress", "remains": 0, "refill_id": generate_token()})
-                ORDER_QUEUE.put(order_id)
                 results.append({"order": order_id, "refill": order["refill_id"], "status": "success"})
             else:
                 results.append({"order": order_id, "status": "error", "error": "Pedido não encontrado"})
@@ -1169,7 +1061,6 @@ def api_v2():
     elif action == 'setcancelrejected':
         task_id = data.get('cancel')
         if update_order(task_id, {"status": "pending", "reason": "Cancelamento rejeitado"}):
-            ORDER_QUEUE.put(task_id)
             return jsonify({"status": "success"})
         return jsonify({"status": "error", "error": "Pedido não encontrado"})
     
