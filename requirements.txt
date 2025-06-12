@@ -1,0 +1,4 @@
+Flask
+ffmpeg-python
+Werkzeug
+gunicorn
