@@ -3,9 +3,28 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once 'db_connect.php';
+// Conexão com banco Railway
+try {
+    $pdo = new PDO(
+        "mysql:host=tramway.proxy.rlwy.net;port=12027;dbname=railway;charset=utf8mb4",
+        "root",
+        "nLrLybfKaZucSbtMIMDtoTiJKjTdCYWq"
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Erro na conexão com o banco de dados: " . $e->getMessage());
+}
 
-// Não redireciona para login se a rota for 'home' ou se for 'login'/'register'
+// Função de registro de visitas
+function logVisit($pdo, $page) {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'desconhecido';
+    $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'desconhecido';
+
+    $stmt = $pdo->prepare("INSERT INTO visits (page, ip_address, user_agent) VALUES (?, ?, ?)");
+    $stmt->execute([$page, $ip, $agent]);
+}
+
+// Lógica de rota e verificação de login
 $route = $_GET['route'] ?? 'home';
 if (!isset($_SESSION['user_id']) && !in_array($route, ['login', 'register', 'home'])) {
     header("Location: ?route=login");
@@ -14,6 +33,7 @@ if (!isset($_SESSION['user_id']) && !in_array($route, ['login', 'register', 'hom
 
 logVisit($pdo, $route);
 
+// Roteamento
 switch ($route) {
     case 'home':
         require 'home.php';
@@ -54,6 +74,7 @@ switch ($route) {
 <?php if (isset($_SESSION['user_id'])): ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
+/* SEU CSS ORIGINAL AQUI - MENU E POPUP DE BUSCA */
 .nav-menu {
     position: fixed;
     background-color: #fff;
@@ -100,7 +121,7 @@ switch ($route) {
     }
 }
 
-/* Estilo do popup de pesquisa */
+/* Popup de pesquisa */
 #search-popup {
     position: fixed;
     top: 0;
@@ -115,7 +136,6 @@ switch ($route) {
     padding: 20px;
     box-sizing: border-box;
 }
-
 @media (max-width: 768px) {
     #search-popup {
         top: 0;
@@ -125,7 +145,6 @@ switch ($route) {
         padding-bottom: 60px;
     }
 }
-
 #search-popup-input {
     background: #111;
     color: white;
@@ -136,13 +155,11 @@ switch ($route) {
     margin-bottom: 15px;
     border-radius: 8px;
 }
-
 #search-popup-results {
     overflow-y: auto;
     max-height: calc(100vh - 120px);
     padding: 10px;
 }
-
 #search-popup-results .user-result {
     display: flex;
     align-items: center;
@@ -151,11 +168,9 @@ switch ($route) {
     cursor: pointer;
     transition: background-color 0.2s;
 }
-
 #search-popup-results .user-result:hover {
     background-color: rgba(255, 255, 255, 0.05);
 }
-
 #search-popup-results .user-result img {
     width: 50px;
     height: 50px;
@@ -164,20 +179,17 @@ switch ($route) {
     object-fit: cover;
     border: 2px solid #333;
 }
-
 #search-popup-results .user-result span {
     color: #fff;
     font-size: 16px;
     font-weight: 500;
 }
-
 .no-results {
     color: #888;
     text-align: center;
     padding: 20px;
     font-size: 16px;
 }
-
 .close-search {
     position: absolute;
     top: 15px;
@@ -213,7 +225,7 @@ let searchTimeout;
 function toggleSearch() {
     const popup = document.getElementById('search-popup');
     if (!popup) return;
-    
+
     if (popup.style.display === 'flex') {
         popup.style.display = 'none';
         document.getElementById('search-popup-input').value = '';
@@ -233,22 +245,22 @@ document.getElementById('search-popup-input').addEventListener('input', function
 function buscarUsuarios() {
     const q = document.getElementById('search-popup-input').value.trim();
     const results = document.getElementById('search-popup-results');
-    
+
     if (q.length === 0) {
         results.innerHTML = '';
         return;
     }
-    
+
     fetch('buscar_usuarios.php?q=' + encodeURIComponent(q))
         .then(res => res.json())
         .then(data => {
             results.innerHTML = '';
-            
+
             if (!Array.isArray(data) || data.length === 0) {
                 results.innerHTML = '<div class="no-results">Nenhum usuário encontrado</div>';
                 return;
             }
-            
+
             data.forEach(user => {
                 const div = document.createElement('div');
                 div.className = 'user-result';
@@ -257,11 +269,9 @@ function buscarUsuarios() {
                          onerror="this.src='https://cdn-icons-png.flaticon.com/512/4140/4140048.png'">
                     <span>@${user.username}</span>
                 `;
-                
                 div.addEventListener('click', () => {
                     window.location.href = `?route=profile&user_id=${user.id}`;
                 });
-                
                 results.appendChild(div);
             });
         })

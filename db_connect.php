@@ -1,13 +1,13 @@
 <?php
-$host = 'tramway.proxy.rlwy.net';
-$port = 12027;
-$dbname = 'railway';
-$username = 'root';
-$password = 'nLrLybfKaZucSbtMIMDtoTiJKjTdCYWq';
-
+// Conexão com o banco hospedado no Railway
 try {
-    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo = new PDO(
+        "mysql:host=tramway.proxy.rlwy.net;port=12027;dbname=railway;charset=utf8mb4",
+        "root",
+        "nLrLybfKaZucSbtMIMDtoTiJKjTdCYWq"
+    );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Erro de conexão: " . $e->getMessage());
+    die("Erro na conexão com o banco de dados: " . $e->getMessage());
 }
+?>
